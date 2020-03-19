@@ -3,7 +3,7 @@ use crate::database::models::{
     NewNodeState, NewResources, Node, NodeState, Resources, UpdateNodeState, UpdateResources,
 };
 use crate::database::schema;
-use crate::message::{Message, MsgType, NodeResources, StatUpdate};
+use crate::message::{NodeResources, StatUpdate};
 use redis::Commands;
 use schema::Node_resources::dsl::*;
 use schema::Node_state::dsl::*;

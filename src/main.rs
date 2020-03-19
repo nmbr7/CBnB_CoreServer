@@ -26,7 +26,7 @@ fn main() -> () {
     let (server_tx, server_rx) = mpsc::channel();
 
     let _server_thread = thread::spawn(move || {
-        server_api_main(server_tx);
+        server_api_main(server_tx, client_tx);
     });
     let _client_thread = thread::spawn(move || {
         client_api_main(client_rx);

@@ -1,13 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
-struct VM {}
-struct Storage {}
-struct Docker {}
-struct Fas {}
-
-struct service {}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StatUpdate {
     pub uuid: String,
@@ -74,25 +67,56 @@ pub struct MemInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum MsgType {
-    // Received from the node
-    REGISTER,
-    UPDATE_SYSTAT,
+pub enum ServiceType {
     // Send to the node
-    // CHECKSYSTAT,
-    // SERVICESTART,
-    // SERVICESTOP,
+    //    Vm,
+    // Storage,
+    Faas,
+    //  Docker,
     // CUSTOM,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Message<T> {
-    pub msg_type: MsgType,
-    pub content: T, //sys_stat::Resources,
+pub enum ServiceMsgType {
+    // CHECKSYSTAT,
+    SERVICEUPDATE,
+    SERVICEINIT,
+    SERVICESTART,
+    SERVICESTOP,
+    // CUSTOM,
 }
 
-impl<T> Message<T> {
-    fn new(msg_type: MsgType, content: T) -> Self {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServiceMessage {
+    pub msg_type: ServiceMsgType,
+    pub service_type: ServiceType,
+    pub content: String,
+}
+
+//////////////////////////////////////////////////////////
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum NodeMsgType {
+    // Received from the node
+    REGISTER,
+    UPDATE_SYSTAT,
+    // Send to the node
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NodeMessage {
+    pub msg_type: NodeMsgType,
+    pub content: String, //sys_stat::Resources,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Message {
+    Node(NodeMessage),
+    Service(ServiceMessage),
+}
+
+impl NodeMessage {
+    fn new(msg_type: NodeMsgType, content: String) -> Self {
         Self { msg_type, content }
     }
     //pub fn parse(data: [u8; 512]) -> Result<T> {

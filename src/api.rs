@@ -6,13 +6,18 @@ use std::str;
 use std::sync::mpsc;
 use std::thread;
 
+use serde_json::{json, Result, Value};
+
 //use crate::node::Node;
-use crate::message::{Message, MsgType, NodeResources, StatUpdate};
+use crate::message::{
+    Message, NodeMsgType, NodeResources, ServiceMsgType, ServiceType, StatUpdate,
+};
 use crate::node;
 
 fn server_api_handler(
     mut stream: TcpStream,
     server_dup_tx: mpsc::Sender<String>,
+    client_dup_tx: mpsc::Sender<String>,
     data: (String),
 ) -> () {
     //println!("{:?} and {:?}",stream,server_dup_tx);
@@ -25,55 +30,58 @@ fn server_api_handler(
 
     //let r = format!("{}", String::from_utf8_lossy(&buffer[0..no]));
     //let a = buffer[0..no].split("_:_").map(|l| l.to_string()).collect::<Vec<String>>();
-    let recv_data: Message<String> = serde_json::from_slice(&buffer[0..no]).unwrap();
+    let recv_data: Message = serde_json::from_slice(&buffer[0..no]).unwrap();
     //println!("{:?}", recv_data);
-    match recv_data.msg_type {
-        MsgType::REGISTER => {
-            let rc: NodeResources = serde_json::from_str(&recv_data.content).unwrap();
-            node::register(rc, data);
-            //println!("REGISTER\n{:?}", rc);
-        }
-        MsgType::UPDATE_SYSTAT => {
-            let rc: StatUpdate = serde_json::from_str(&recv_data.content).unwrap();
-            node::update(rc);
-            //println!("UPDATE_SYSSTAT\n{:?}", rc);
-        }
+    match recv_data {
+        Message::Node(node) => match node.msg_type {
+            NodeMsgType::REGISTER => {
+                let rc: NodeResources = serde_json::from_str(&node.content).unwrap();
+                node::register(rc, data);
+                //println!("REGISTER\n{:?}", rc);
+            }
+            NodeMsgType::UPDATE_SYSTAT => {
+                let rc: StatUpdate = serde_json::from_str(&node.content).unwrap();
+                node::update(rc);
+                //println!("UPDATE_SYSSTAT\n{:?}", rc);
+            }
+        },
+        Message::Service(service) => match service.msg_type {
+            ServiceMsgType::SERVICEINIT => match service.service_type {
+                ServiceType::Faas => {
+                    let content: Value = serde_json::from_str(&service.content.as_str()).unwrap();
+                    println!("{:?}", content);
+                    match content["request"].as_str().unwrap() {
+                        "select_node" => {
+                            // Query database to select node
+
+                            let msg = json!({
+                                "response" : {
+                                    "node_ip" : "127.0.0.1:7777",
+                                }
+                            })
+                            .to_string();
+
+                            stream.write_all(&msg.as_bytes());
+                            stream.flush().unwrap();
+                        }
+                        _ => {}
+                    }
+                }
+            },
+            ServiceMsgType::SERVICESTART => {}
+            ServiceMsgType::SERVICESTOP => {}
+            ServiceMsgType::SERVICEUPDATE => {}
+        },
     };
-
-    //  let recv_data: Message::<NodeResources> = serde_json::from_slice(&buffer[0..no]).unwrap();
-
-    /*
-    let get = b"[[Register Node]]--";
-    if buffer.starts_with(get) {
-        //create new node;
-        //        let n = Node::new();
-        //register node;
-        //        Node::register(&n);
-
-        let put = b"New NodeClient Registered--";
-        stream.write(put).unwrap();
-        stream.flush().unwrap();
-        server_dup_tx
-            .send(format!(
-                "{}",
-                str::from_utf8(&buffer)
-                    .unwrap()
-                    .split("--")
-                    .collect::<Vec<&str>>()[0]
-            ))
-            .unwrap();
-    }
-    */
 }
 
 fn client_api_handler(mut stream: TcpStream) -> () {
     // println!("{:?}",stream);
-    let put = b"Hello from server--";
-    stream.write(put).unwrap();
+    stream.write_all("sdaf".as_bytes()).unwrap();
     stream.flush().unwrap();
 }
 
-pub fn server_api_main(server_tx: mpsc::Sender<String>) -> () {
+pub fn server_api_main(server_tx: mpsc::Sender<String>, client_tx: mpsc::Sender<String>) -> () {
     let listener = TcpListener::bind("0.0.0.0:7778").unwrap();
     println!("Waiting for connections");
     for stream in listener.incoming() {
@@ -83,9 +91,10 @@ pub fn server_api_main(server_tx: mpsc::Sender<String>) -> () {
 
         // In case of browser there may be multiple requests for fetching
         // different file in a page
+        let client_dup_tx = mpsc::Sender::clone(&client_tx);
         let server_dup_tx = mpsc::Sender::clone(&server_tx);
         thread::spawn(move || {
-            server_api_handler(stream, server_dup_tx, data);
+            server_api_handler(stream, server_dup_tx, client_dup_tx, data);
         });
     }
 }
