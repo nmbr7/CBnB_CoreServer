@@ -14,18 +14,18 @@ use crate::schema::{Node_resources, Node_state, Nodes};
 #[derive(Debug, Queryable, Associations, Identifiable)]
 #[primary_key(node_id)]
 #[table_name = "Node_resources"]
-#[belongs_to(Node<'a>)]
+#[belongs_to(parent = "Node")]
 pub struct Resources {
     pub node_id: String,
-    mem_total: String,
-    mem_usage: String,
-    mem_free: String,
-    mem_available: String,
-    net_speed_up: String,
-    net_speed_down: String,
+    mem_total: f64,
+    mem_usage: f64,
+    mem_free: f64,
+    mem_available: f64,
+    net_speed_up: f64,
+    net_speed_down: f64,
     net_ciface: String,
     cpu_cores: i32,
-    cpu_usage: String,
+    cpu_usage: f64,
     cpu_model: String,
     //disk_storage: f32,
     //gpu: bool,
@@ -38,15 +38,15 @@ pub struct Resources {
 #[derive(Insertable)]
 pub struct NewResources<'a> {
     pub node_id: &'a str,
-    pub mem_total: &'a str,
-    pub mem_usage: &'a str,
-    pub mem_free: &'a str,
-    pub mem_available: &'a str,
-    pub net_speed_up: &'a str,
-    pub net_speed_down: &'a str,
+    pub mem_total: f64,
+    pub mem_usage: f64,
+    pub mem_free: f64,
+    pub mem_available: f64,
+    pub net_speed_up: f64,
+    pub net_speed_down: f64,
     pub net_ciface: &'a str,
     pub cpu_cores: i32,
-    pub cpu_usage: &'a str,
+    pub cpu_usage: f64,
     pub cpu_model: &'a str,
     //disk_storage: f32,
     //gpu: bool,
@@ -59,13 +59,13 @@ pub struct NewResources<'a> {
 #[derive(AsChangeset)]
 pub struct UpdateResources<'a> {
     pub node_id: &'a str,
-    pub mem_usage: &'a str,
-    pub mem_free: &'a str,
-    pub mem_available: &'a str,
-    pub net_speed_up: &'a str,
-    pub net_speed_down: &'a str,
+    pub mem_usage: f64,
+    pub mem_free: f64,
+    pub mem_available: f64,
+    pub net_speed_up: f64,
+    pub net_speed_down: f64,
     pub net_ciface: &'a str,
-    pub cpu_usage: &'a str,
+    pub cpu_usage: f64,
     //disk_storage: f32,
     //gpu: bool,
     // Add additional fields like VM count, docker machine details and details
@@ -76,7 +76,7 @@ pub struct UpdateResources<'a> {
 #[derive(Debug, Queryable, Associations, Identifiable)]
 #[table_name = "Node_state"]
 #[primary_key(node_id)]
-#[belongs_to(Node<'a>)]
+#[belongs_to(parent = "Node")]
 pub struct NodeState {
     pub node_id: String,
     uptime: String,
@@ -100,11 +100,20 @@ pub struct UpdateNodeState<'a> {
 }
 
 //###############################################################
-#[derive(Debug, Insertable, Queryable, Associations, Identifiable)]
+#[derive(Debug,  Insertable, Queryable, Associations, Identifiable)]
 #[table_name = "Nodes"]
-pub struct Node<'a> {
+pub struct NewNode<'a> {
     pub id: &'a str,
     pub ip: &'a str,
+    //    location: Option<String>,
+    //    score: Option<f32>, //to rate a node
+}
+
+#[derive(Debug, Insertable, Queryable, Associations, Identifiable)]
+#[table_name = "Nodes"]
+pub struct Node {
+    pub id: String,
+    pub ip: String,
     //    location: Option<String>,
     //    score: Option<f32>, //to rate a node
 }

@@ -1,15 +1,15 @@
 table! {
     Node_resources (node_id) {
         node_id -> Varchar,
-        mem_total -> Varchar,
-        mem_usage -> Varchar,
-        mem_free -> Varchar,
-        mem_available -> Varchar,
-        net_speed_up -> Varchar,
-        net_speed_down -> Varchar,
+        mem_total -> Double,
+        mem_usage -> Double,
+        mem_free -> Double,
+        mem_available -> Double,
+        net_speed_up -> Double,
+        net_speed_down -> Double,
         net_ciface -> Varchar,
         cpu_cores -> Integer,
-        cpu_usage -> Varchar,
+        cpu_usage -> Double,
         cpu_model -> Varchar,
     }
 }
@@ -29,4 +29,8 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(Node_resources, Node_state, Nodes,);
+allow_tables_to_appear_in_same_query!(
+    Node_resources,
+    Node_state,
+    Nodes,
+);

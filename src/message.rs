@@ -4,10 +4,10 @@ use serde_json::Result;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StatUpdate {
     pub uuid: String,
-    pub cpu_usage: String,
-    pub mem_usage: (String, String),
-    pub mem_free: String,
-    pub mem_available: String,
+    pub cpu_usage: f64,
+    pub mem_usage: (f64, f64),
+    pub mem_free: f64,
+    pub mem_available: f64,
     pub net: NetInfo,
     pub uptime: String,
     //ram: u64,
@@ -45,24 +45,24 @@ pub struct CpuInfo {
     //virtualization: String,
     pub model: String,
     pub cputime: (i64, i64),
-    pub usage: String,
+    pub usage: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NetInfo {
     //interfaces: String,
     pub current_interface: String,
-    pub speed: (String, String),
+    pub speed: (f64, f64),
     //ip: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemInfo {
-    pub usage: (String, String),
-    pub total: String,
+    pub usage: (f64, f64),
+    pub total: f64,
     //used: String,
-    pub free: String,
-    pub available: String,
+    pub free: f64,
+    pub available: f64,
     //swap: String,
 }
 

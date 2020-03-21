@@ -1,6 +1,6 @@
 use crate::database::dbfunc;
 use crate::database::models::{
-    NewNodeState, NewResources, Node, NodeState, Resources, UpdateNodeState, UpdateResources,
+    NewNode, NewNodeState, NewResources, Node, NodeState, Resources, UpdateNodeState, UpdateResources,
 };
 use crate::database::schema;
 use crate::message::{NodeResources, StatUpdate};
@@ -45,14 +45,14 @@ pub fn update(stat: StatUpdate) -> () {
 
     let res_model = UpdateResources {
         node_id: &nodeid,
-        mem_usage: &stat.mem_usage.1,
-        mem_free: &stat.mem_free,
-        mem_available: &stat.mem_available,
+        mem_usage: stat.mem_usage.1,
+        mem_free: stat.mem_free,
+        mem_available: stat.mem_available,
         // TODO Write a TO/FROM impl for storing net_speed as a single tuple
-        net_speed_up: &stat.net.speed.0,
-        net_speed_down: &stat.net.speed.1,
+        net_speed_up: stat.net.speed.0,
+        net_speed_down: stat.net.speed.1,
         net_ciface: &stat.net.current_interface,
-        cpu_usage: &stat.cpu_usage,
+        cpu_usage: stat.cpu_usage,
     };
 
     let state_model = UpdateNodeState {
@@ -72,7 +72,7 @@ pub fn register(res: NodeResources, node_ip: String) -> () {
     let client = redis::Client::open("redis://172.28.5.3/").unwrap();
     let mut con = client.get_connection().unwrap();
     let _: () = con.set(&res.uuid, &nodeid).unwrap();
-    let node_model = Node {
+    let node_model = NewNode {
         id: &nodeid,
         // TODO NOT IMPLEMENTED IN THE NODE
         ip: &node_ip,
@@ -80,17 +80,17 @@ pub fn register(res: NodeResources, node_ip: String) -> () {
 
     let res_model = NewResources {
         node_id: &nodeid, // Default node_id set to 0 (updated based on the inserted node id)
-        mem_usage: &res.mem.usage.1,
-        mem_total: &res.mem.total,
-        mem_free: &res.mem.free,
-        mem_available: &res.mem.available,
+        mem_usage: res.mem.usage.1,
+        mem_total: res.mem.total,
+        mem_free: res.mem.free,
+        mem_available: res.mem.available,
         // TODO NOT IMPLEMENTED IN THE NODE
         cpu_cores: 4 as i32,
         // TODO Write a TO/FROM impl for storing net_speed as a single tuple
-        net_speed_up: &res.net.speed.0,
-        net_speed_down: &res.net.speed.1,
+        net_speed_up: res.net.speed.0,
+        net_speed_down: res.net.speed.1,
         net_ciface: &res.net.current_interface,
-        cpu_usage: &res.cpu.usage,
+        cpu_usage: res.cpu.usage,
         cpu_model: &res.cpu.model,
     };
 
@@ -115,8 +115,52 @@ mod tests {
 
     #[test]
     fn run() {
-        let nodeid = Uuid::new_v4().to_string();
-        println!("{}", nodeid); //  println!("{:?}",Message::new(MsgType::REGISTER,stat))
-                                //println!("{}", Message::<sys_stat::NodeResources>::register(stat))
+//        let nodeid = Uuid::new_v4().to_string();
+//        println!("{}", nodeid); 
+//        println!("{:?}",Message::new(MsgType::REGISTER,stat))
+//        println!("{}", Message::<sys_stat::NodeResources>::register(stat))
     }
+
+
+    #[test]
+    fn dbjoin() {
+//        use crate::schema::*;
+//        use diesel::*;
+        let conn = dbfunc::establish_connection();
+        //let a = Nodes.find(1).load(&conn);
+        //println!("{:?}", Node_resources::belonging_to(&a).load(&conn));
+
+        /*
+        let a = Nodes.filter(id.ne("cqdsasda")).load::<Nodesturct>(&conn).unwrap();
+        for i in a {
+            println!("{:?}",i.ip);
+        }
+        let me = Node_state
+            .select(NodeState::node_id)
+                .first::<NodeState>(&conn)
+                .expect("Error loading user");
+        let my_photos = Resources::belonging_to(&me)
+                .load::<Resources>(&conn)
+                .expect("Error loading photos");
+*/
+
+        let b = Nodes.filter(id.ne("dd")).load::<Node>(&conn)
+            .expect("Couldn't find first user");
+
+        let c = NodeState::belonging_to(&b).load::<NodeState>(&conn);
+        for i in c{
+
+
+
+        }
+        use schema::*;
+        joinable!(Node_resources -> Nodes (node_id));
+        let a : Vec<String> = Nodes.inner_join(Node_resources).filter(cpu_usage.le(70.0)).select(ip).load(&conn).unwrap();
+        println!("{:?}",a);
+    }
+
+
+
+
+
 }

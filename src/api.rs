@@ -21,8 +21,15 @@ fn server_api_handler(
     data: (String),
 ) -> () {
     //println!("{:?} and {:?}",stream,server_dup_tx);
-    let mut buffer = [0; 512];
+    let mut buffer = [0; 1512];
+
+    //Read IP
     let no = stream.read(&mut buffer).unwrap();
+    stream.write_all("OK".as_bytes()).unwrap();
+    stream.flush().unwrap();
+    let source_ip = std::str::from_utf8(&buffer[0..no]).unwrap().to_string();
+    println!("Received conn from node IP :- {} via ()\n", &source_ip);
+
     //let buf = buffer.trim_matches(char::from(0));
     //let mut reader = BufReader::new(stream);
     //let lines = reader.lines();
@@ -30,19 +37,19 @@ fn server_api_handler(
 
     //let r = format!("{}", String::from_utf8_lossy(&buffer[0..no]));
     //let a = buffer[0..no].split("_:_").map(|l| l.to_string()).collect::<Vec<String>>();
+    let no = stream.read(&mut buffer).unwrap();
     let recv_data: Message = serde_json::from_slice(&buffer[0..no]).unwrap();
-    //println!("{:?}", recv_data);
     match recv_data {
         Message::Node(node) => match node.msg_type {
             NodeMsgType::REGISTER => {
                 let rc: NodeResources = serde_json::from_str(&node.content).unwrap();
-                node::register(rc, data);
-                //println!("REGISTER\n{:?}", rc);
+    //            println!("REGISTER\n{:?}", rc);
+                node::register(rc, source_ip);
             }
             NodeMsgType::UPDATE_SYSTAT => {
                 let rc: StatUpdate = serde_json::from_str(&node.content).unwrap();
+      //          println!("UPDATE_SYSSTAT\n{:?}", rc);
                 node::update(rc);
-                //println!("UPDATE_SYSSTAT\n{:?}", rc);
             }
         },
         Message::Service(service) => match service.msg_type {
@@ -87,7 +94,6 @@ pub fn server_api_main(server_tx: mpsc::Sender<String>, client_tx: mpsc::Sender<
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
         let data = (stream.peer_addr().unwrap().to_string());
-        println!("Received connection from IP :- {}", &data);
 
         // In case of browser there may be multiple requests for fetching
         // different file in a page
