@@ -43,12 +43,12 @@ fn server_api_handler(
         Message::Node(node) => match node.msg_type {
             NodeMsgType::REGISTER => {
                 let rc: NodeResources = serde_json::from_str(&node.content).unwrap();
-    //            println!("REGISTER\n{:?}", rc);
+                //            println!("REGISTER\n{:?}", rc);
                 node::register(rc, source_ip);
             }
             NodeMsgType::UPDATE_SYSTAT => {
                 let rc: StatUpdate = serde_json::from_str(&node.content).unwrap();
-      //          println!("UPDATE_SYSSTAT\n{:?}", rc);
+                //          println!("UPDATE_SYSSTAT\n{:?}", rc);
                 node::update(rc);
             }
         },
@@ -60,10 +60,10 @@ fn server_api_handler(
                     match content["request"].as_str().unwrap() {
                         "select_node" => {
                             // Query database to select node
-
+                            let nodes = node::allocate_node();
                             let msg = json!({
                                 "response" : {
-                                    "node_ip" : "127.0.0.1:7777",
+                                    "node_ip" : nodes,
                                 }
                             })
                             .to_string();

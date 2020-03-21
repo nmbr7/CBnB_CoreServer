@@ -100,7 +100,7 @@ pub struct UpdateNodeState<'a> {
 }
 
 //###############################################################
-#[derive(Debug,  Insertable, Queryable, Associations, Identifiable)]
+#[derive(Debug, Insertable, Queryable, Associations, Identifiable)]
 #[table_name = "Nodes"]
 pub struct NewNode<'a> {
     pub id: &'a str,

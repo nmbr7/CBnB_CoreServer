@@ -1,6 +1,7 @@
 use crate::database::dbfunc;
 use crate::database::models::{
-    NewNode, NewNodeState, NewResources, Node, NodeState, Resources, UpdateNodeState, UpdateResources,
+    NewNode, NewNodeState, NewResources, Node, NodeState, Resources, UpdateNodeState,
+    UpdateResources,
 };
 use crate::database::schema;
 use crate::message::{NodeResources, StatUpdate};
@@ -29,6 +30,24 @@ macro_rules! update_table {
             .execute($conn)
             .expect("Error updating the table");
     };
+}
+
+pub fn allocate_node() -> Vec<String> {
+    use schema::*;
+    let min_mem_usage = 80_f64;
+    let min_cpu_usage = 70_f64;
+
+    let conn = dbfunc::establish_connection();
+    joinable!(Node_resources -> Nodes (node_id));
+    let a: Vec<String> = Nodes
+        .inner_join(Node_resources)
+        .filter(cpu_usage.le(min_cpu_usage).and(mem_usage.le(min_mem_usage)))
+        .order(mem_usage.asc())
+        .select(ip)
+        .load(&conn)
+        .unwrap();
+
+    a
 }
 
 pub fn update(stat: StatUpdate) -> () {
@@ -115,52 +134,39 @@ mod tests {
 
     #[test]
     fn run() {
-//        let nodeid = Uuid::new_v4().to_string();
-//        println!("{}", nodeid); 
-//        println!("{:?}",Message::new(MsgType::REGISTER,stat))
-//        println!("{}", Message::<sys_stat::NodeResources>::register(stat))
+        //        let nodeid = Uuid::new_v4().to_string();
+        //        println!("{}", nodeid);
+        //        println!("{:?}",Message::new(MsgType::REGISTER,stat))
+        //        println!("{}", Message::<sys_stat::NodeResources>::register(stat))
     }
-
 
     #[test]
     fn dbjoin() {
-//        use crate::schema::*;
-//        use diesel::*;
+        //        use crate::schema::*;
+        //        use diesel::*;
         let conn = dbfunc::establish_connection();
         //let a = Nodes.find(1).load(&conn);
         //println!("{:?}", Node_resources::belonging_to(&a).load(&conn));
 
         /*
-        let a = Nodes.filter(id.ne("cqdsasda")).load::<Nodesturct>(&conn).unwrap();
-        for i in a {
-            println!("{:?}",i.ip);
-        }
-        let me = Node_state
-            .select(NodeState::node_id)
-                .first::<NodeState>(&conn)
-                .expect("Error loading user");
-        let my_photos = Resources::belonging_to(&me)
-                .load::<Resources>(&conn)
-                .expect("Error loading photos");
-*/
+                let a = Nodes.filter(id.ne("cqdsasda")).load::<Nodesturct>(&conn).unwrap();
+                for i in a {
+                    println!("{:?}",i.ip);
+                }
+                let me = Node_state
+                    .select(NodeState::node_id)
+                        .first::<NodeState>(&conn)
+                        .expect("Error loading user");
+                let my_photos = Resources::belonging_to(&me)
+                        .load::<Resources>(&conn)
+                        .expect("Error loading photos");
+        */
 
-        let b = Nodes.filter(id.ne("dd")).load::<Node>(&conn)
+        let b = Nodes
+            .filter(id.ne("dd"))
+            .load::<Node>(&conn)
             .expect("Couldn't find first user");
 
         let c = NodeState::belonging_to(&b).load::<NodeState>(&conn);
-        for i in c{
-
-
-
-        }
-        use schema::*;
-        joinable!(Node_resources -> Nodes (node_id));
-        let a : Vec<String> = Nodes.inner_join(Node_resources).filter(cpu_usage.le(70.0)).select(ip).load(&conn).unwrap();
-        println!("{:?}",a);
     }
-
-
-
-
-
 }
