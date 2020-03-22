@@ -28,7 +28,7 @@ fn server_api_handler(
     stream.write_all("OK".as_bytes()).unwrap();
     stream.flush().unwrap();
     let source_ip = std::str::from_utf8(&buffer[0..no]).unwrap().to_string();
-    println!("Received conn from node IP :- {} via ()\n", &source_ip);
+    println!("Received conn from node IP :- {} via ({})\n", &source_ip,data);
 
     //let buf = buffer.trim_matches(char::from(0));
     //let mut reader = BufReader::new(stream);
