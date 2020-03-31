@@ -69,10 +69,9 @@ pub struct MemInfo {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ServiceType {
     // Send to the node
-    //    Vm,
-    // Storage,
+    Storage,
     Faas,
-    //  Docker,
+    Paas,
     // CUSTOM,
 }
 

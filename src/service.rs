@@ -1,14 +1,10 @@
 use std::collections::HashMap;
 
-struct VM<'a> {
-    pub service_id: &'a str,
-    pub node_id: &'a str,
-}
 struct Storage<'a> {
     pub service_id: &'a str,
     pub node_id: &'a str,
 }
-struct Docker<'a> {
+struct Paas<'a> {
     pub service_id: &'a str,
     pub node_id: &'a str,
 }
@@ -22,8 +18,7 @@ struct Fas<'a> {
 }
 
 struct Service {
-    pub vms: HashMap<String, &VM>,
     pub storages: HashMap<String, &Storage>,
-    pub dockersapps: HashMap<String, &Docker>,
+    pub paas: HashMap<String, &Paas>,
     pub faas: HashMap<String, &Fas>,
 }

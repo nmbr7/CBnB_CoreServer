@@ -28,7 +28,10 @@ fn server_api_handler(
     stream.write_all("OK".as_bytes()).unwrap();
     stream.flush().unwrap();
     let source_ip = std::str::from_utf8(&buffer[0..no]).unwrap().to_string();
-    println!("Received conn from node IP :- {} via ({})\n", &source_ip,data);
+    println!(
+        "Received conn from node IP :- {} via ({})\n",
+        &source_ip, data
+    );
 
     //let buf = buffer.trim_matches(char::from(0));
     //let mut reader = BufReader::new(stream);
@@ -52,34 +55,73 @@ fn server_api_handler(
                 node::update(rc);
             }
         },
-        Message::Service(service) => match service.msg_type {
-            ServiceMsgType::SERVICEINIT => match service.service_type {
-                ServiceType::Faas => {
-                    let content: Value = serde_json::from_str(&service.content.as_str()).unwrap();
-                    println!("{:?}", content);
-                    match content["request"].as_str().unwrap() {
-                        "select_node" => {
-                            // Query database to select node
-                            let nodes = node::allocate_node();
-                            let msg = json!({
-                                "response" : {
-                                    "node_ip" : nodes,
-                                }
-                            })
-                            .to_string();
+        Message::Service(service) => {
+            let content: Value = serde_json::from_str(&service.content.as_str()).unwrap();
+            println!("{:?}", content);
 
-                            stream.write_all(&msg.as_bytes());
-                            stream.flush().unwrap();
+            match service.msg_type {
+                ServiceMsgType::SERVICEINIT => match service.service_type {
+                    ServiceType::Faas => {
+                        match content["request"].as_str().unwrap() {
+                            "select_node" => {
+                                // Query database to select node
+                                let nodes = node::allocate_node();
+                                let msg = json!({
+                                    "response" : {
+                                        "node_ip" : nodes,
+                                    }
+                                })
+                                .to_string();
+
+                                stream.write_all(&msg.as_bytes());
+                                stream.flush().unwrap();
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
-                }
-            },
-            ServiceMsgType::SERVICESTART => {}
-            ServiceMsgType::SERVICESTOP => {}
-            ServiceMsgType::SERVICEUPDATE => {}
-        },
-    };
+                    ServiceType::Paas => {
+                        match content["request"].as_str().unwrap() {
+                            "select_node" => {
+                                // Query database to select node
+                                let nodes = node::allocate_node();
+                                let msg = json!({
+                                    "response" : {
+                                        "node_ip" : nodes,
+                                    }
+                                })
+                                .to_string();
+
+                                stream.write_all(&msg.as_bytes());
+                                stream.flush().unwrap();
+                            }
+                            _ => {}
+                        }
+                    }
+                    ServiceType::Storage => {
+                        match content["request"].as_str().unwrap() {
+                            "select_node" => {
+                                // Query database to select node
+                                let nodes = node::allocate_node();
+                                let msg = json!({
+                                    "response" : {
+                                        "node_ip" : nodes,
+                                    }
+                                })
+                                .to_string();
+
+                                stream.write_all(&msg.as_bytes());
+                                stream.flush().unwrap();
+                            }
+                            _ => {}
+                        }
+                    }
+                },
+                ServiceMsgType::SERVICEUPDATE => {}
+                ServiceMsgType::SERVICESTART => {}
+                ServiceMsgType::SERVICESTOP => {}
+            }
+        }
+    }
 }
 
 fn client_api_handler(mut stream: TcpStream) -> () {
