@@ -87,6 +87,7 @@ pub enum ServiceMsgType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceMessage {
+    pub uuid: String,
     pub msg_type: ServiceMsgType,
     pub service_type: ServiceType,
     pub content: String,
@@ -104,6 +105,7 @@ pub enum NodeMsgType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeMessage {
+    pub uuid: String,
     pub msg_type: NodeMsgType,
     pub content: String, //sys_stat::Resources,
 }
@@ -116,7 +118,11 @@ pub enum Message {
 
 impl NodeMessage {
     fn new(msg_type: NodeMsgType, content: String) -> Self {
-        Self { msg_type, content }
+        Self {
+            uuid: "Core_uuid".to_string(),
+            msg_type,
+            content,
+        }
     }
     //pub fn parse(data: [u8; 512]) -> Result<T> {
     //let msg: Message::<>= serde_json::from_slice(&data)?;
