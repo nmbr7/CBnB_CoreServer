@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate diesel;
 extern crate dotenv;
+extern crate log;
 extern crate redis;
 extern crate uuid;
 
@@ -11,6 +12,8 @@ mod node;
 
 use diesel::prelude::*;
 use dotenv::dotenv;
+use log::{info, warn};
+
 use std::env;
 
 use self::database::models::{NewNodeState, NewResources, Node, NodeState, Resources};
@@ -22,9 +25,9 @@ use std::thread;
 use api::{client_api_main, server_api_main};
 
 fn main() -> () {
+    env_logger::init();
     let (client_tx, client_rx) = mpsc::channel();
     let (server_tx, server_rx) = mpsc::channel();
-
     let _server_thread = thread::spawn(move || {
         server_api_main(server_tx, client_tx);
     });
@@ -36,7 +39,7 @@ fn main() -> () {
         let received = server_rx.try_recv();
         match received {
             Ok(s) => {
-                println!("Received from Node Client: {}", &s);
+                info!("Received from Node Client: {}", &s);
                 //let ip = s; // Get Node client IP address from the core server api
                 //thread::sleep(Duration::from_secs(2));
                 //let addr = format!("{}:7777", ip);

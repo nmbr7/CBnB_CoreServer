@@ -98,6 +98,7 @@ pub struct ServiceMessage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum NodeMsgType {
     // Received from the node
+    PROXY_REGISTRATION,
     REGISTER,
     UPDATE_SYSTAT,
     // Send to the node

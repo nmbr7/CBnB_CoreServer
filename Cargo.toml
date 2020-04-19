@@ -11,3 +11,5 @@ diesel = { version = "1.4.3", features = ["mysql"] }
 uuid = { version = "0.8", features = ["serde", "v4"] }
 dotenv = "0.10"
 redis = "*"
+log = "*"
+env_logger = "*"
