@@ -26,6 +26,7 @@ use api::{client_api_main, server_api_main};
 
 fn main() -> () {
     env_logger::init();
+    println!("\x1B[H\x1B[2J");
     let (client_tx, client_rx) = mpsc::channel();
     let (server_tx, server_rx) = mpsc::channel();
     let _server_thread = thread::spawn(move || {
