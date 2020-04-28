@@ -52,7 +52,7 @@ fn server_api_handler(
                 //node::register(rc, source_ip);
                 let msg = json!({
                     "response" : "OK",
-                        "mode" : 1
+                        "mode" : 0
                 })
                 .to_string();
 
@@ -81,7 +81,7 @@ fn server_api_handler(
                             "select_node" => {
                                 // Query database to select node
                                 let nodes = node::allocate_node();
-                                println!("{:?}",nodes);
+                                println!("{:?}", nodes);
                                 let msg = json!({
                                     "response" : {
                                         "node_ip" : nodes,
@@ -133,8 +133,7 @@ fn server_api_handler(
                     }
                 },
                 ServiceMsgType::SERVICEUPDATE => {}
-                ServiceMsgType::SERVICESTART => {}
-                ServiceMsgType::SERVICESTOP => {}
+                ServiceMsgType::SERVICEMANAGE => {}
             }
         }
     }
