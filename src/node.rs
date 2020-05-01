@@ -41,7 +41,7 @@ pub fn allocate_node() -> Vec<String> {
     joinable!(Node_resources -> Nodes (node_id));
     let a: Vec<String> = Nodes
         .inner_join(Node_resources)
-        .filter(cpu_usage.ge(min_cpu_usage).and(mem_usage.le(min_mem_usage)))
+        .filter(cpu_usage.le(min_cpu_usage).and(mem_usage.le(min_mem_usage)))
         .order(mem_usage.asc())
         .select(ip)
         .load(&conn)
