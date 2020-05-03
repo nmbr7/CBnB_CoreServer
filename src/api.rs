@@ -5,7 +5,7 @@ use std::net::TcpStream;
 use std::str;
 use std::sync::mpsc;
 use std::thread;
-
+use std::sync::{Arc, Mutex};
 use log::{info, warn};
 use serde_json::{json, Result, Value};
 
@@ -19,6 +19,7 @@ fn server_api_handler(
     mut stream: TcpStream,
     server_dup_tx: mpsc::Sender<String>,
     client_dup_tx: mpsc::Sender<String>,
+    proxycount: Arc<Mutex<[u8;2]>>,
     data: (String),
 ) -> () {
     //println!("{:?} and {:?}",stream,server_dup_tx);
@@ -49,10 +50,26 @@ fn server_api_handler(
                 let rc: Value = serde_json::from_str(&node.content).unwrap();
                 //            println!("REGISTER\n{:?}", rc);
                 //TODO Register the proxy and insert the data in the DB
-                //node::register(rc, source_ip);
+                //node::register(rc, source_ipi);
+                let mut nmode = 0;
+                {                                               
+                     let mut proxycountval = proxycount.lock().unwrap();            
+                     if proxycountval[0] == 0 { 
+                         proxycountval[0] += 1;
+                         nmode = 0;
+                     }
+                     else if proxycountval[1] == 0{
+                         proxycountval[1] += 1;
+                         nmode = 1;
+                     }
+                     else{
+                         proxycountval[0] += 1;
+                         nmode = 0;
+                     }
+                }
                 let msg = json!({
                     "response" : "OK",
-                        "mode" : 0
+                        "mode" : nmode
                 })
                 .to_string();
 
@@ -148,16 +165,18 @@ fn client_api_handler(mut stream: TcpStream) -> () {
 pub fn server_api_main(server_tx: mpsc::Sender<String>, client_tx: mpsc::Sender<String>) -> () {
     let listener = TcpListener::bind("0.0.0.0:7778").unwrap();
     info!("Waiting for connections");
+    let service_root = Arc::new(Mutex::new([0;2]));
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
         let data = (stream.peer_addr().unwrap().to_string());
+        let proxycnt = Arc::clone(&service_root);
 
         // In case of browser there may be multiple requests for fetching
         // different file in a page
         let client_dup_tx = mpsc::Sender::clone(&client_tx);
         let server_dup_tx = mpsc::Sender::clone(&server_tx);
         thread::spawn(move || {
-            server_api_handler(stream, server_dup_tx, client_dup_tx, data);
+            server_api_handler(stream, server_dup_tx, client_dup_tx, proxycnt, data);
         });
     }
 }
