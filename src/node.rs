@@ -35,7 +35,7 @@ macro_rules! update_table {
 pub fn allocate_node() -> Vec<String> {
     use schema::*;
     let min_mem_usage = 95_f64;
-    let min_cpu_usage = 95_f64;
+    let min_cpu_usage = 100_f64;
 
     let conn = dbfunc::establish_connection();
     joinable!(Node_resources -> Nodes (node_id));

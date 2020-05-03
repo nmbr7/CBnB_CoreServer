@@ -29,8 +29,4 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(
-    Node_resources,
-    Node_state,
-    Nodes,
-);
+allow_tables_to_appear_in_same_query!(Node_resources, Node_state, Nodes,);
