@@ -5,6 +5,10 @@ extern crate log;
 extern crate redis;
 extern crate uuid;
 
+#[macro_use]
+extern crate diesel_migrations;
+
+
 mod api;
 mod database;
 mod message;
@@ -12,7 +16,7 @@ mod node;
 
 use diesel::prelude::*;
 use dotenv::dotenv;
-use log::{info, warn};
+use log::{info, debug, warn};
 
 use std::env;
 
@@ -23,10 +27,24 @@ use std::sync::mpsc;
 use std::thread;
 //use std::time::Duration;
 use api::{client_api_main, server_api_main};
+use crate::database::dbfunc;
+
+embed_migrations!();
 
 fn main() -> () {
     env_logger::init();
     println!("\x1B[H\x1B[2J");
+
+
+    info!("Reverting Diesel migrations");
+    let conn = dbfunc::establish_connection();
+    diesel_migrations::revert_latest_migration(&conn);
+    diesel_migrations::revert_latest_migration(&conn);
+    diesel_migrations::revert_latest_migration(&conn);
+    diesel_migrations::revert_latest_migration(&conn);
+    info!("Running Diesel migrations");
+    embedded_migrations::run(&conn);
+    
     let (client_tx, client_rx) = mpsc::channel();
     let (server_tx, server_rx) = mpsc::channel();
     let _server_thread = thread::spawn(move || {
@@ -53,8 +71,8 @@ fn main() -> () {
         };
         //  break;
     }
-    //_client_thread.join().unwrap();
-    //_server_thread.join().unwrap();
+    _client_thread.join().unwrap();
+    _server_thread.join().unwrap();
 }
 
 #[cfg(test)]
