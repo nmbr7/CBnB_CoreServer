@@ -1,13 +1,13 @@
+use log::{info, warn};
+use serde_json::{json, Result, Value};
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::str;
 use std::sync::mpsc;
-use std::thread;
 use std::sync::{Arc, Mutex};
-use log::{info, warn};
-use serde_json::{json, Result, Value};
+use std::thread;
 
 //use crate::node::Node;
 use crate::message::{
@@ -18,8 +18,8 @@ use crate::node;
 fn server_api_handler(
     mut stream: TcpStream,
     server_dup_tx: mpsc::Sender<String>,
-    client_dup_tx: mpsc::Sender<(String,String)>,
-    proxycount: Arc<Mutex<[u8;2]>>,
+    client_dup_tx: mpsc::Sender<(String, String)>,
+    proxycount: Arc<Mutex<[u8; 2]>>,
     data: (String),
 ) -> () {
     //println!("{:?} and {:?}",stream,server_dup_tx);
@@ -52,20 +52,18 @@ fn server_api_handler(
                 //TODO Register the proxy and insert the data in the DB
                 //node::register(rc, source_ipi);
                 let mut nmode = 0;
-                {                                               
-                     let mut proxycountval = proxycount.lock().unwrap();            
-                     if proxycountval[0] == 0 { 
-                         proxycountval[0] += 1;
-                         nmode = 0;
-                     }
-                     else if proxycountval[1] == 0{
-                         proxycountval[1] += 1;
-                         nmode = 1;
-                     }
-                     else{
-                         proxycountval[0] += 1;
-                         nmode = 0;
-                     }
+                {
+                    let mut proxycountval = proxycount.lock().unwrap();
+                    if proxycountval[0] == 0 {
+                        proxycountval[0] += 1;
+                        nmode = 0;
+                    } else if proxycountval[1] == 0 {
+                        proxycountval[1] += 1;
+                        nmode = 1;
+                    } else {
+                        proxycountval[0] += 1;
+                        nmode = 0;
+                    }
                 }
                 let msg = json!({
                     "response" : "OK",
@@ -82,13 +80,11 @@ fn server_api_handler(
                 let memory = rc.mem.total;
                 let addr = format!("{}:7777", &source_ip.split(':').collect::<Vec<&str>>()[0]);
                 node::register(rc, source_ip);
-                if memory > 3.072{
+                if memory > 3.072 {
                     //thread::sleep(Duration::from_secs(2));
-                    client_dup_tx.send((addr,data)).unwrap();
+                    client_dup_tx.send((addr, data)).unwrap();
                     // client_tx.send(addr).unwrap();
                 }
-
-
             }
             NodeMsgType::UPDATE_SYSTAT => {
                 let rc: StatUpdate = serde_json::from_str(&node.content).unwrap();
@@ -165,7 +161,7 @@ fn server_api_handler(
     }
 }
 
-fn client_api_handler(mut stream: TcpStream,node_addr: String) -> () {
+fn client_api_handler(mut stream: TcpStream, node_addr: String) -> () {
     // println!("{:?}",stream);
     let coreserver_uuid = format!("Coreserver_unique_uuid");
     let msgcontent = Message::Service(ServiceMessage {
@@ -179,18 +175,30 @@ fn client_api_handler(mut stream: TcpStream,node_addr: String) -> () {
         .to_string(),
     });
     info!("Senting Qemu start message");
-    let msg =  serde_json::to_string(&msgcontent).unwrap().as_bytes().to_owned();
+    let msg = serde_json::to_string(&msgcontent)
+        .unwrap()
+        .as_bytes()
+        .to_owned();
     stream.write_all(&msg).unwrap();
     stream.flush().unwrap();
 }
 
-pub fn server_api_main(server_tx: mpsc::Sender<String>, client_tx: mpsc::Sender<(String,String)>) -> () {
+pub fn server_api_main(
+    server_tx: mpsc::Sender<String>,
+    client_tx: mpsc::Sender<(String, String)>,
+) -> () {
     let listener = TcpListener::bind("0.0.0.0:7778").unwrap();
     info!("Waiting for connections");
-    let service_root = Arc::new(Mutex::new([0;2]));
+    let service_root = Arc::new(Mutex::new([0; 2]));
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
-        let data = (stream.peer_addr().unwrap().to_string().split(":").collect::<Vec<&str>>()[0].to_string());
+        let data = (stream
+            .peer_addr()
+            .unwrap()
+            .to_string()
+            .split(":")
+            .collect::<Vec<&str>>()[0]
+            .to_string());
         let proxycnt = Arc::clone(&service_root);
 
         // In case of browser there may be multiple requests for fetching
@@ -203,13 +211,13 @@ pub fn server_api_main(server_tx: mpsc::Sender<String>, client_tx: mpsc::Sender<
     }
 }
 
-pub fn client_api_main(client_rx: mpsc::Receiver<(String,String)>) -> () {
+pub fn client_api_main(client_rx: mpsc::Receiver<(String, String)>) -> () {
     //let client_dup_rx = mpsc::Sender::clone(&client_rx);
-    for (node_addr,proxy_addr) in client_rx {
+    for (node_addr, proxy_addr) in client_rx {
         let proxy_addr = format!("{}:7779", proxy_addr);
         let stream = TcpStream::connect(proxy_addr).unwrap();
         thread::spawn(move || {
-            client_api_handler(stream,node_addr);
+            client_api_handler(stream, node_addr);
         });
     }
 }
