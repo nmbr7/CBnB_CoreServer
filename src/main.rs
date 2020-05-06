@@ -59,13 +59,8 @@ fn main() -> () {
         match received {
             Ok(s) => {
                 info!("Received from Node Client: {}", &s);
-                //let ip = s; // Get Node client IP address from the core server api
-                //thread::sleep(Duration::from_secs(2));
                 //let addr = format!("{}:7777", ip);
                 //client_tx.send(addr).unwrap();
-
-                // let addr = String::from("127.0.0.1:6666");
-                // client_tx.send(addr).unwrap();
             }
             Err(_) => (),
         };

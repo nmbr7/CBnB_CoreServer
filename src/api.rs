@@ -11,14 +11,14 @@ use serde_json::{json, Result, Value};
 
 //use crate::node::Node;
 use crate::message::{
-    Message, NodeMsgType, NodeResources, ServiceMsgType, ServiceType, StatUpdate,
+    Message, NodeMsgType, NodeResources, ServiceMessage, ServiceMsgType, ServiceType, StatUpdate,
 };
 use crate::node;
 
 fn server_api_handler(
     mut stream: TcpStream,
     server_dup_tx: mpsc::Sender<String>,
-    client_dup_tx: mpsc::Sender<String>,
+    client_dup_tx: mpsc::Sender<(String,String)>,
     proxycount: Arc<Mutex<[u8;2]>>,
     data: (String),
 ) -> () {
@@ -79,7 +79,16 @@ fn server_api_handler(
             NodeMsgType::REGISTER => {
                 let rc: NodeResources = serde_json::from_str(&node.content).unwrap();
                 //            println!("REGISTER\n{:?}", rc);
+                let memory = rc.mem.total;
+                let addr = format!("{}:7777", &source_ip.split(':').collect::<Vec<&str>>()[0]);
                 node::register(rc, source_ip);
+                if memory > 3.072{
+                    //thread::sleep(Duration::from_secs(2));
+                    client_dup_tx.send((addr,data)).unwrap();
+                    // client_tx.send(addr).unwrap();
+                }
+
+
             }
             NodeMsgType::UPDATE_SYSTAT => {
                 let rc: StatUpdate = serde_json::from_str(&node.content).unwrap();
@@ -156,19 +165,32 @@ fn server_api_handler(
     }
 }
 
-fn client_api_handler(mut stream: TcpStream) -> () {
+fn client_api_handler(mut stream: TcpStream,node_addr: String) -> () {
     // println!("{:?}",stream);
-    stream.write_all("sdaf".as_bytes()).unwrap();
+    let coreserver_uuid = format!("Coreserver_unique_uuid");
+    let msgcontent = Message::Service(ServiceMessage {
+        uuid: coreserver_uuid,
+        msg_type: ServiceMsgType::SERVICEMANAGE,
+        service_type: ServiceType::Paas,
+        content: json!({
+            "node_ip"  : node_addr,
+            "msg_type" : "start",
+        })
+        .to_string(),
+    });
+    info!("Senting Qemu start message");
+    let msg =  serde_json::to_string(&msgcontent).unwrap().as_bytes().to_owned();
+    stream.write_all(&msg).unwrap();
     stream.flush().unwrap();
 }
 
-pub fn server_api_main(server_tx: mpsc::Sender<String>, client_tx: mpsc::Sender<String>) -> () {
+pub fn server_api_main(server_tx: mpsc::Sender<String>, client_tx: mpsc::Sender<(String,String)>) -> () {
     let listener = TcpListener::bind("0.0.0.0:7778").unwrap();
     info!("Waiting for connections");
     let service_root = Arc::new(Mutex::new([0;2]));
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
-        let data = (stream.peer_addr().unwrap().to_string());
+        let data = (stream.peer_addr().unwrap().to_string().split(":").collect::<Vec<&str>>()[0].to_string());
         let proxycnt = Arc::clone(&service_root);
 
         // In case of browser there may be multiple requests for fetching
@@ -181,12 +203,13 @@ pub fn server_api_main(server_tx: mpsc::Sender<String>, client_tx: mpsc::Sender<
     }
 }
 
-pub fn client_api_main(client_rx: mpsc::Receiver<String>) -> () {
+pub fn client_api_main(client_rx: mpsc::Receiver<(String,String)>) -> () {
     //let client_dup_rx = mpsc::Sender::clone(&client_rx);
-    for received in client_rx {
-        let stream = TcpStream::connect(received).unwrap();
+    for (node_addr,proxy_addr) in client_rx {
+        let proxy_addr = format!("{}:7779", proxy_addr);
+        let stream = TcpStream::connect(proxy_addr).unwrap();
         thread::spawn(move || {
-            client_api_handler(stream);
+            client_api_handler(stream,node_addr);
         });
     }
 }
