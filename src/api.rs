@@ -102,7 +102,7 @@ fn server_api_handler(
                         match content["request"].as_str().unwrap() {
                             "select_node" => {
                                 // Query database to select node
-                                let nodes = node::allocate_node();
+                                let nodes = node::allocate_node(ServiceType::Faas);
                                 println!("{:?}", nodes);
                                 let msg = json!({
                                     "response" : {
@@ -121,7 +121,7 @@ fn server_api_handler(
                         match content["request"].as_str().unwrap() {
                             "select_node" => {
                                 // Query database to select node
-                                let nodes = node::allocate_node();
+                                let nodes = node::allocate_node(ServiceType::Paas);
                                 let msg = json!({
                                     "response" : {
                                         "node_ip" : nodes,
@@ -139,7 +139,7 @@ fn server_api_handler(
                         match content["request"].as_str().unwrap() {
                             "select_node" => {
                                 // Query database to select node
-                                let nodes = node::allocate_node();
+                                let nodes = node::allocate_node(ServiceType::Storage);
                                 let msg = json!({
                                     "response" : {
                                         "node_ip" : nodes,

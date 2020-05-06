@@ -13,6 +13,7 @@ use schema::Nodes::dsl::*;
 use diesel::prelude::*;
 use uuid::Uuid;
 
+use crate::message::ServiceType;
 // TODO Move this  macro to the dbfunc.rs file properly
 macro_rules! insert_into {
     ($conn:expr, $table:expr, $val:expr) => {
@@ -32,32 +33,45 @@ macro_rules! update_table {
     };
 }
 
-pub fn allocate_node() -> Vec<String> {
+pub fn allocate_node(service: ServiceType) -> Vec<String> {
     use schema::*;
     let min_mem_usage = 95_f64;
     let min_cpu_usage = 100_f64;
+    let min_vm_mem = 3_f64;
 
     let conn = dbfunc::establish_connection();
     joinable!(Node_resources -> Nodes (node_id));
-    let a: Vec<String> = Nodes
-        .inner_join(Node_resources)
-        .filter(cpu_usage.le(min_cpu_usage).and(mem_usage.le(min_mem_usage)))
-        .order(mem_usage.asc())
-        .select(ip)
-        .load(&conn)
-        .unwrap();
 
-    a
+    match service {
+        ServiceType::Paas => Nodes
+            .inner_join(Node_resources)
+            .filter(
+                mem_total
+                    .ge(min_vm_mem)
+                    .and(cpu_usage.le(min_cpu_usage).and(mem_usage.le(min_mem_usage))),
+            )
+            .order(mem_usage.asc())
+            .select(ip)
+            .load(&conn)
+            .unwrap(),
+        ServiceType::Faas => Nodes
+            .inner_join(Node_resources)
+            .filter(cpu_usage.le(min_cpu_usage).and(mem_usage.le(min_mem_usage)))
+            .order(mem_usage.asc())
+            .select(ip)
+            .load(&conn)
+            .unwrap(),
+        ServiceType::Storage => Nodes
+            .inner_join(Node_resources)
+            .filter(cpu_usage.le(min_cpu_usage).and(mem_usage.le(min_mem_usage)))
+            .order(mem_usage.asc())
+            .select(ip)
+            .load(&conn)
+            .unwrap(),
+    }
 }
 
 pub fn update(stat: StatUpdate) -> () {
-    //let res_update_model =
-
-    //    let nodeid = Uuid::new_v4().to_string() ;
-    //    let node_model = Node {
-    // TODO NOT IMPLEMENTED IN THE NODE
-    //ip: &node_ip,
-    //    };
     let client = redis::Client::open("redis://172.28.5.3/").unwrap();
     let mut con = client.get_connection().unwrap();
     let nodeid: String = con.get(&stat.uuid).unwrap();
